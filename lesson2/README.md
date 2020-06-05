@@ -16,11 +16,51 @@
 * 创建存证，可调用函数所接收参数为内容的哈希值 Vec<u8>
 * 撤销存证，可调用函数所接收参数为内容的哈希值 Vec<u8>
 
-### 1.1 编译
+### 1.1 编码
+
+- **创建存证**
+
+```rust
+        #[weight = 0]
+        pub fn create_claim(origin, claim: Vec<u8>) -> dispatch::DispatchResult {
+            let sender = ensure_signed(origin)?;
+     
+            ensure!(!Proofs::<T>::contains_key(&claim), Error::<T>::ProofAlreadyExist);
+     
+            Proofs::<T>::insert(&claim, (sender.clone(), system::Module::<T>::block_number()));
+     
+            Self::deposit_event(RawEvent::ClaimCreate(sender, claim));
+     
+            Ok(())
+        }
+```
+
+- **撤销存证**
+
+```rust
+        #[weight = 0]
+        pub fn revoke_claim(origin, claim: Vec<u8>) -> dispatch::DispatchResult {
+            let sender = ensure_signed(origin)?;
+     
+            ensure!(Proofs::<T>::contains_key(&claim), Error::<T>::ClaimNotExist);
+     
+            let (owner, _block_number) = Proofs::<T>::get(&claim);
+     
+            ensure!(owner == sender, Error::<T>::NotClaimOwner);
+     
+            Proofs::<T>::remove(&claim);
+     
+            Self::deposit_event(RawEvent::ClaimRevoke(sender, claim));
+     
+            Ok(())
+        }  
+```
+
+### 1.2 编译
 
 ![image-20200605123635436](README/image-20200605123635436.png)
 
-### 1.2 运行
+### 1.3 运行
 
 - 执行命令
 
@@ -30,7 +70,7 @@
 
 ![image-20200605124256520](README/image-20200605124256520.png)
 
-### 1.3 测试
+### 1.4 测试
 
 #### （1）创建存证交易
 
@@ -58,7 +98,65 @@
 
 * 转移存证，接收两个参数，一个是内容的哈希值，另一个是存证的接收账户地址；当存证不存在或者发送请求的用户不是存证内容的拥有人时，返回错误；当所有的检查通过后，更新对应的存证记录，并触发一个事件。
 
+### 2.1 编码
 
+```rust
+        // 转移存证
+        #[weight = 0]
+        pub fn transfer_claim(origin, claim: Vec<u8>, receiver: T::AccountId) -> dispatch::DispatchResult {
+            let sender = ensure_signed(origin)?;
+    
+            // 存证不存在
+            ensure!(Proofs::<T>::contains_key(&claim), Error::<T>::ClaimNotExist);
+    
+            // 不是拥有者
+            let (owner, block_number) = Proofs::<T>::get(&claim);
+            ensure!(owner == sender, Error::<T>::NotClaimOwner);
+    
+            Proofs::<T>::remove(&claim);
+            Proofs::<T>::insert(&claim, (receiver.clone(), block_number));
+    
+            Self::deposit_event(RawEvent::ClaimTransfer(receiver, claim));
+    
+            Ok(())
+        }
+```
+
+### 2.2 编译
+
+![image-20200605234750482](README/image-20200605234750482.png)
+
+### 2.3 运行
+
+![image-20200605235046458](README/image-20200605235046458.png)
+
+### 2.4 测试
+
+#### （1）Alice创建存证交易
+
+![image-20200605235227584](README/image-20200605235227584.png)
+
+#### （2）查看存证交易
+
+![image-20200605235343641](README/image-20200605235343641.png)
+
+#### （3）Alice转移不存在存证
+
+![image-20200605235452002](README/image-20200605235452002.png)
+
+#### （4）Bob转移Alice存证
+
+![image-20200605235538047](README/image-20200605235538047.png)
+
+#### （5）Alice转移存证给Bob
+
+![image-20200605235638588](README/image-20200605235638588.png)
+
+#### （6）再次查看存证状态
+
+> 可见存证交易所在区块高度还是维持不变，归属人地址发生了变更，符合预期。
+
+![image-20200605235747572](README/image-20200605235747572.png)
 
 
 
