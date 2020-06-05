@@ -47,6 +47,7 @@ decl_event!(
         // SomethingStored(u32, AccountId),
         ClaimCreate(AccountId, Vec<u8>),
         ClaimRevoke(AccountId, Vec<u8>),
+        ClaimTransfer(AccountId, Vec<u8>),
     }
 );
 
@@ -76,7 +77,7 @@ decl_module! {
         // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
 
-        // 存证
+        // 创建存证
         #[weight = 0]
         pub fn create_claim(origin, claim: Vec<u8>) -> dispatch::DispatchResult {
             let sender = ensure_signed(origin)?;
@@ -88,7 +89,6 @@ decl_module! {
             Self::deposit_event(RawEvent::ClaimCreate(sender, claim));
 
             Ok(())
-
         }
 
         // 撤销存证
@@ -109,38 +109,24 @@ decl_module! {
             Ok(())
         }
 
-        // /// Just a dummy entry point.
-        // /// function that can be called by the external world as an extrinsics call
-        // /// takes a parameter of the type `AccountId`, stores it, and emits an event
-        // #[weight = 10_000]
-        // pub fn do_something(origin, something: u32) -> dispatch::DispatchResult {
-        // 	// Check it was signed and get the signer. See also: ensure_root and ensure_none
-        // 	let who = ensure_signed(origin)?;
+        // 转移存证
+        #[weight = 0]
+        pub fn transfer_claim(origin, claim: Vec<u8>, receiver: T::AccountId) -> dispatch::DispatchResult {
+            let sender = ensure_signed(origin)?;
 
-        // 	// Code to execute when something calls this.
-        // 	// For example: the following line stores the passed in u32 in the storage
-        // 	Something::put(something);
+            // 存证不存在
+            ensure!(Proofs::<T>::contains_key(&claim), Error::<T>::ClaimNotExist);
 
-        // 	// Here we are raising the Something event
-        // 	Self::deposit_event(RawEvent::SomethingStored(something, who));
-        // 	Ok(())
-        // }
+            // 不是拥有者
+            let (owner, block_number) = Proofs::<T>::get(&claim);
+            ensure!(owner == sender, Error::<T>::NotClaimOwner);
 
-        // /// Another dummy entry point.
-        // /// takes no parameters, attempts to increment storage value, and possibly throws an error
-        // #[weight = 10_000]
-        // pub fn cause_error(origin) -> dispatch::DispatchResult {
-        // 	// Check it was signed and get the signer. See also: ensure_root and ensure_none
-        // 	let _who = ensure_signed(origin)?;
+            Proofs::<T>::remove(&claim);
+            Proofs::<T>::insert(&claim, (receiver.clone(), block_number));
 
-        // 	match Something::get() {
-        // 		None => Err(Error::<T>::NoneValue)?,
-        // 		Some(old) => {
-        // 			let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-        // 			Something::put(new);
-        // 			Ok(())
-        // 		},
-        // 	}
-        // }
+            Self::deposit_event(RawEvent::ClaimTransfer(receiver, claim));
+
+            Ok(())
+        }
     }
 }
