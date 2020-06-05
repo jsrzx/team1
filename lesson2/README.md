@@ -164,9 +164,46 @@
 
 * 创建存证时，为存证内容的哈希值设置界限，如果超出界限，返回错误。
 
+### 3.1 编码
 
+> 设置存证内容哈希值长度只能是128bit
 
+```rust
+        // 创建存证
+        #[weight = 0]
+        pub fn create_claim(origin, claim: Vec<u8>) -> dispatch::DispatchResult {
+            let sender = ensure_signed(origin)?;
+ 
+            let hash_size = 16;
+            ensure!(claim.len() == hash_size, Error::<T>::ClaimInvalidSize);
+ 
+            ensure!(!Proofs::<T>::contains_key(&claim), Error::<T>::ProofAlreadyExist);
+ 
+            Proofs::<T>::insert(&claim, (sender.clone(), system::Module::<T>::block_number()));
+ 
+            Self::deposit_event(RawEvent::ClaimCreate(sender, claim));
+ 
+            Ok(())
+        }
+```
 
+### 3.2 编译
+
+![image-20200606001302492](README/image-20200606001302492.png)
+
+### 3.3 运行
+
+![image-20200606001350557](README/image-20200606001350557.png)
+
+### 3.4 测试
+
+#### （1）传入合法哈希
+
+![image-20200606002953922](README/image-20200606002953922.png)
+
+#### （2）传入非法哈希
+
+![image-20200606003017941](README/image-20200606003017941.png)
 
 ## 参考资料
 

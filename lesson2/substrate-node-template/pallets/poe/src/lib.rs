@@ -59,6 +59,7 @@ decl_error! {
         // /// Value reached maximum and cannot be incremented further
         // StorageOverflow,
         ProofAlreadyExist,
+        ClaimInvalidSize,
         ClaimNotExist,
         NotClaimOwner,
     }
@@ -81,6 +82,9 @@ decl_module! {
         #[weight = 0]
         pub fn create_claim(origin, claim: Vec<u8>) -> dispatch::DispatchResult {
             let sender = ensure_signed(origin)?;
+
+            let max_hash_size = 16;
+            ensure!(claim.len() == max_hash_size, Error::<T>::ClaimInvalidSize);
 
             ensure!(!Proofs::<T>::contains_key(&claim), Error::<T>::ProofAlreadyExist);
 
