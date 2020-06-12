@@ -422,7 +422,7 @@ return (
 * 用户A为自己的某个存证记录设置价格；
 * 用户B可以以一定的价格购买某个存证，当出价高于用户A设置的价格时，则以用户A设定的价格将费用从用户B转移到用户A，再将该存证进行转移。如果出价低于用户A的价格时，则不进行转移，返回错误。
 
-## 3.1 代码编写
+### 3.1 后端代码编写
 
 ```rust
         #[weight = 0]
@@ -475,22 +475,102 @@ return (
 
 ![image-20200613001245538](imgs/image-20200613001245538.png)
 
-## 3.2 功能测试
+### 3.2 后端功能测试
 
-### 3.2.1 alice创建存证
+#### 3.2.1 alice创建存证
 
 ![image-20200613001659068](imgs/image-20200613001659068.png)
 
-### 3.2.2 alice为其存证设置价格
+#### 3.2.2 alice为其存证设置价格
 
 ![image-20200613002113804](imgs/image-20200613002113804.png)
 
-### 3.3.3 bob以低于alice设置价格购买
+#### 3.3.3 bob以低于alice设置价格购买
 
 ![image-20200613002205517](imgs/image-20200613002205517.png)
 
-### 3.3.4 bob以高于alice设置价格购买
+#### 3.3.4 bob以高于alice设置价格购买
 
 ![image-20200613002249998](imgs/image-20200613002249998.png)
 
 ![image-20200613002402754](imgs/image-20200613002402754.png)
+
+### 3.3 UI代码编写
+
+```react
+  const [amount, setAmount] = useState(0);
+
+  const onAmountChange = (_, data) => {
+    setAmount(data.value);
+  }
+  
+          <Form.Field>
+          <Input
+            fluid
+            label='Amount'
+            type='number'
+            state='amount'
+            onChange={onAmountChange}
+          />
+        </Form.Field>
+  
+            <TxButton
+            accountPair={accountPair}
+            label='Attach Claim Price'
+            setStatus={setStatus}
+            type='SIGNED-TX'
+            attrs={
+              {
+                palletRpc: 'poeModule',
+                callable: 'attachClaimPrice',
+                inputParams: [digest, amount],
+                paramFields: [true, true]
+              }
+            }
+          />
+
+          <TxButton
+            accountPair={accountPair}
+            label='Buy Claim'
+            setStatus={setStatus}
+            type='SIGNED-TX'
+            attrs={
+              {
+                palletRpc: 'poeModule',
+                callable: 'buyClaim',
+                inputParams: [digest, amount],
+                paramFields: [true, true]
+              }
+            }
+          />
+```
+
+### 3.4 UI功能测试
+
+#### 3.4.1 **测试账号**
+
+| 用户名 | 地址                                             |
+| ------ | ------------------------------------------------ |
+| alice  | 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY |
+| bob    | 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty |
+
+#### 3.4.2 alice创建存证
+
+![image-20200613005234388](imgs/image-20200613005234388.png)
+
+#### 3.4.3 alice为其存证设置价格
+
+![image-20200613005450282](imgs/image-20200613005450282.png)
+
+#### 3.4.4 bob以低于alice设置价格购买
+
+> 切换到bob账号，以低于alice设置价格购买，交易完成后，存证归属无变化。
+
+![image-20200613005547502](imgs/image-20200613005547502.png)
+
+#### 3.4.5 bob以高于alice设置价格购买
+
+> bob以高于alice设置价格购买，存证归属发生变化
+
+![image-20200613005801818](imgs/image-20200613005801818.png)
+

@@ -15,6 +15,7 @@ function Main (props) {
   const [owner, setOwner] = useState('');
   const [blockNumber, setBlockNumber] = useState(0);
   const [dest, setDest] = useState('');
+  const [amount, setAmount] = useState(0);
 
   useEffect(() => {
     let unsubscribe;
@@ -51,6 +52,10 @@ function Main (props) {
     setDest(data.value);
   };
 
+  const onAmountChange = (_, data) => {
+    setAmount(data.value);
+  };
+
   return (
     <Grid.Column width={8}>
       <h1>Proof of Existence Module</h1>
@@ -71,6 +76,16 @@ function Main (props) {
             placeholder='address'
             state='dest'
             onChange={onDestChange}
+          />
+        </Form.Field>
+
+        <Form.Field>
+          <Input
+            fluid
+            label='Amount'
+            type='number'
+            state='amount'
+            onChange={onAmountChange}
           />
         </Form.Field>
 
@@ -115,6 +130,36 @@ function Main (props) {
                 palletRpc: 'poeModule',
                 callable: 'transferClaim',
                 inputParams: [digest, dest],
+                paramFields: [true, true]
+              }
+            }
+          />
+
+          <TxButton
+            accountPair={accountPair}
+            label='Attach Claim Price'
+            setStatus={setStatus}
+            type='SIGNED-TX'
+            attrs={
+              {
+                palletRpc: 'poeModule',
+                callable: 'attachClaimPrice',
+                inputParams: [digest, amount],
+                paramFields: [true, true]
+              }
+            }
+          />
+
+          <TxButton
+            accountPair={accountPair}
+            label='Buy Claim'
+            setStatus={setStatus}
+            type='SIGNED-TX'
+            attrs={
+              {
+                palletRpc: 'poeModule',
+                callable: 'buyClaim',
+                inputParams: [digest, amount],
                 paramFields: [true, true]
               }
             }
