@@ -422,7 +422,75 @@ return (
 * 用户A为自己的某个存证记录设置价格；
 * 用户B可以以一定的价格购买某个存证，当出价高于用户A设置的价格时，则以用户A设定的价格将费用从用户B转移到用户A，再将该存证进行转移。如果出价低于用户A的价格时，则不进行转移，返回错误。
 
-## 
+## 3.1 代码编写
 
+```rust
+        #[weight = 0]
+        pub fn attach_claim_price(origin, claim: Vec<u8>, price: BalanceOf<T>) -> dispatch::DispatchResult {
+            let sender = ensure_signed(origin)?;
 
+            ensure!(Proofs::<T>::contains_key(&claim), Error::<T>::ClaimNotExist);
 
+            let (owner, _block_number) = Proofs::<T>::get(&claim);
+
+            ensure!(owner == sender, Error::<T>::NotClaimOwner);
+
+            ensure!(!ProofsPrice::<T>::contains_key(&claim), Error::<T>::PriceAlreadySet);
+
+            ProofsPrice::<T>::insert(&claim, price);
+
+            Self::deposit_event(RawEvent::ClaimPriceCreated(sender, claim, price));
+
+            Ok(())
+        }
+
+        #[weight = 0]
+        pub fn buy_claim(origin, claim: Vec<u8>, price: BalanceOf<T>) -> dispatch::DispatchResult {
+            let sender = ensure_signed(origin)?;
+
+            ensure!(Proofs::<T>::contains_key(&claim), Error::<T>::ClaimNotExist);
+
+            ensure!(ProofsPrice::<T>::contains_key(&claim), Error::<T>::ClaimPriceNotSet);
+
+            let expect_price = ProofsPrice::<T>::get(&claim);
+
+            let (owner, _) = Proofs::<T>::get(&claim);
+
+            // 如果出价低于用户A的价格时，则不进行转移，返回错误
+            ensure!(price >= expect_price, Error::<T>::PriceTooLow);
+
+            // 当出价高于用户A设置的价格时，则以用户A设定的价格将费用从用户B转移到用户A
+            T::Currency::transfer(&sender, &owner, expect_price, AllowDeath)?;
+
+            // 再将该存证进行转移
+            Proofs::<T>::insert(&claim, (&sender, system::Module::<T>::block_number()));
+            ProofsPrice::<T>::remove(&claim);
+
+            //Self::deposit_event(RawEvent::ClaimBought(sender, owner, claim, price, expect_price));
+
+            Ok(())
+        }
+
+```
+
+![image-20200613001245538](imgs/image-20200613001245538.png)
+
+## 3.2 功能测试
+
+### 3.2.1 alice创建存证
+
+![image-20200613001659068](imgs/image-20200613001659068.png)
+
+### 3.2.2 alice为其存证设置价格
+
+![image-20200613002113804](imgs/image-20200613002113804.png)
+
+### 3.3.3 bob以低于alice设置价格购买
+
+![image-20200613002205517](imgs/image-20200613002205517.png)
+
+### 3.3.4 bob以高于alice设置价格购买
+
+![image-20200613002249998](imgs/image-20200613002249998.png)
+
+![image-20200613002402754](imgs/image-20200613002402754.png)
