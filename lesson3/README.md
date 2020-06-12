@@ -187,25 +187,233 @@ fn transfer_claim_failed_with_wrong_owner() {
 
 ![image-20200609123647209](imgs/image-20200609123647209.png)
 
-
-
-
-
 ## 第二题：编写存证模块的UI
+
+> - 安装yarn
+>
+> > 参考：https://linuxize.com/post/how-to-install-yarn-on-ubuntu-18-04/
+>
+> ```bash
+> $ curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+> OK
+> 
+> $ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+> deb https://dl.yarnpkg.com/debian/ stable main
+> 
+> $ sudo apt update
+> 
+> $ sudo apt-cache search yarn
+> node-is-npm - Checks if your code is running as an npm script
+> yarn - Fast, reliable, and secure dependency management.
+> 
+> $ yarn --version
+> 1.22.4
+> ```
 
 ### 2.1 创建存证的UI
 
+#### （1）编写代码
 
+```react
+import React, { useEffect, useState } from 'react';
+import { Form, Input, Grid } from 'semantic-ui-react';
+
+import { useSubstrate } from './substrate-lib';
+import { TxButton } from './substrate-lib/components';
+import { blake2AsHex } from '@polkadot/util-crypto';
+
+function Main (props) {
+  const { api } = useSubstrate();
+  const { accountPair } = props;
+
+  // The transaction submission status
+  const [status, setStatus] = useState('');
+  const [digest, setDigest] = useState('');
+  const [owner, setOwner] = useState('');
+  const [blockNumber, setBlockNumber] = useState(0);
+
+  useEffect(() => {
+    let unsubscribe;
+    api.query.poeModule.proofs(digest, (result) => {
+      setOwner(result[0].toString());
+      setBlockNumber(result[1].toNumber());
+    }).then(unsub => {
+      unsubscribe = unsub;
+    })
+      .catch(console.error);
+
+    return () => unsubscribe && unsubscribe();
+  }, [digest, api.query.poeModule]);
+
+  const handleFileChosen = (file) => {
+    const fileReader = new FileReader();
+
+    const bufferToDigest = () => {
+      const content = Array.from(new Uint8Array(fileReader.result))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      const hash = blake2AsHex(content, 256);
+
+      setDigest(hash);
+    };
+
+    fileReader.onloadend = bufferToDigest;
+
+    fileReader.readAsArrayBuffer(file);
+  };
+
+  return (
+    <Grid.Column width={8}>
+      <h1>Proof of Existence Module</h1>
+      <Form>
+        <Form.Field>
+          <Input
+            type='file'
+            id='file'
+            lable='Your File'
+            onChange={(e) => handleFileChosen(e.target.files[0])}
+          />
+        </Form.Field>
+
+        <Form.Field>
+          <TxButton
+            accountPair={accountPair}
+            label='Create Claim'
+            setStatus={setStatus}
+            type='SIGNED-TX'
+            attrs={
+              {
+                palletRpc: 'poeModule',
+                callable: 'createClaim',
+                inputParams: [digest],
+                paramFields: [true]
+              }
+            }
+          />
+        <div>{status}</div>
+        <div>{`Claim info, owner: ${owner}, blockNumber: ${blockNumber}`}</div>
+      </Form>
+    </Grid.Column>
+  );
+}
+
+export default function PoeModule (props) {
+  const { api } = useSubstrate();
+  return (api.query.poeModule && api.query.poeModule.proofs
+    ? <Main {...props} /> : null);
+}
+```
+
+
+
+#### （2）功能测试
+
+![image-20200609231638825](imgs/image-20200609231638825.png)
+
+![image-20200609231619972](imgs/image-20200609231619972.png)
 
 
 
 ### 2.2 删除存证的UI
 
+#### （1）编写代码
 
+```react
+ <Form.Field>
+		 ......
+          <TxButton
+            accountPair={accountPair}
+            label='Revoke Claim'
+            setStatus={setStatus}
+            type='SIGNED-TX'
+            attrs={
+              {
+                palletRpc: 'poeModule',
+                callable: 'revokeClaim',
+                inputParams: [digest],
+                paramFields: [true]
+              }
+            }
+          />
+        </Form.Field>
+```
 
+#### （2）功能测试
 
+![image-20200609231952787](imgs/image-20200609231952787.png)
+
+![image-20200609232003583](imgs/image-20200609232003583.png)
 
 ### 2.3 转移存证的UI
+
+#### （1）编写代码
+
+```react
+  const [dest, setDest] = useState('');
+  
+    const onDestChange = (_, data) => {
+    setDest(data.value);
+  };
+  
+return (
+    <Grid.Column width={8}>
+      <h1>Proof of Existence Module</h1>
+      <Form>
+    	......
+        <Form.Field>
+          <Input
+            type='text'
+            label='To'
+            placeholder='address'
+            state='dest'
+            onChange={onDestChange}
+          />
+        </Form.Field>
+
+        <Form.Field>
+    	......
+          <TxButton
+            accountPair={accountPair}
+            label='Transfer Claim'
+            setStatus={setStatus}
+            type='SIGNED-TX'
+            attrs={
+              {
+                palletRpc: 'poeModule',
+                callable: 'transferClaim',
+                inputParams: [digest, dest],
+                paramFields: [true, true]
+              }
+            }
+          />
+        </Form.Field>
+
+        <div>{status}</div>
+        <div>{`Claim info, owner: ${owner}, blockNumber: ${blockNumber}`}</div>
+
+      </Form>
+    </Grid.Column>
+  );
+}
+```
+
+#### （2）功能测试
+
+- **测试账号**
+
+| 用户名 | 地址                                             |
+| ------ | ------------------------------------------------ |
+| alice  | 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY |
+| bob    | 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty |
+
+- **以alice身份创建存证**
+
+![image-20200612224944453](imgs/image-20200612224944453.png)
+
+- **存证转移给bob**
+
+![image-20200612225238457](imgs/image-20200612225238457.png)
 
 
 
@@ -213,4 +421,8 @@ fn transfer_claim_failed_with_wrong_owner() {
 
 * 用户A为自己的某个存证记录设置价格；
 * 用户B可以以一定的价格购买某个存证，当出价高于用户A设置的价格时，则以用户A设定的价格将费用从用户B转移到用户A，再将该存证进行转移。如果出价低于用户A的价格时，则不进行转移，返回错误。
+
+## 
+
+
 
