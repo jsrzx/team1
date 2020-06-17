@@ -45,7 +45,8 @@ decl_storage! {
         ProofsPrice: map hasher(blake2_128_concat) Vec<u8> => BalanceOf<T>;
 
         //hw4
-        ProofHash2Detail: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Moment, Option<Vec<u8>>);
+        ProofHash2Detail get(fn ph2d): map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Moment, Option<Vec<u8>>);
+        Account2ProofHashList get(fn a2phs): map hasher(identity) T::AccountId => Vec<Vec<u8>>;
     }
 }
 
@@ -107,6 +108,7 @@ decl_module! {
             Ok(())
         }
 
+        //hw4
         #[weight = 0]
         pub fn create_claim_with_note(origin, claim: Vec<u8>, note: Option<Vec<u8>>) -> dispatch::DispatchResult {
             let sender = ensure_signed(origin)?;
@@ -126,6 +128,21 @@ decl_module! {
                  system::Module::<T>::block_number(),
                  <timestamp::Module<T>>::now(),
                  note.clone()));
+
+            if Account2ProofHashList::<T>::contains_key(&sender) {
+                let mut vec = Account2ProofHashList::<T>::get(&sender);
+                match vec.binary_search(&claim) {
+                    // If the search succeeds, the caller is already a member, so just return
+                    Ok(_) => (),
+                    Err(index) => vec.insert(index, claim.clone()),
+                };
+                Account2ProofHashList::<T>::insert(&sender, vec);
+            }
+            else {
+                let mut vec = Vec::<Vec<u8>>::new();
+                vec.push(claim.clone());
+                Account2ProofHashList::<T>::insert(&sender, vec);
+            }
 
             Self::deposit_event(RawEvent::ClaimCreated(sender, claim));
 

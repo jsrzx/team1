@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Grid, TextArea, Label } from 'semantic-ui-react';
+import { Form, Input, Grid, TextArea, Label, Button } from 'semantic-ui-react';
 
 import { useSubstrate } from './substrate-lib';
 import { TxButton } from './substrate-lib/components';
@@ -18,6 +18,10 @@ function Main (props) {
   const [amount, setAmount] = useState(0);
   const [note, setNote] = useState('');
   const [showingNotification, setShowingNotification] = useState(false);
+  const [unsub, setUnsub] = useState(null);
+  const [userAddress, setUserAddress] = useState('');
+  const [userDocs, setUserDocs] = useState([]);
+  const [showingUserDocs, setShowingUserDocs] = useState(false);
 
   useEffect(() => {
     let unsubscribe;
@@ -91,6 +95,72 @@ function Main (props) {
         You have successfully claimed file with hash <strong>{digest}</strong> with note <strong>"{note}"</strong>.
       </div>
     );
+  };
+
+  const convertToString = (hex) => {
+    if (hex && hex.length) {
+      return decodeURIComponent(hex.replace(/\s+/g, '').replace(/[0-9a-f]{2}/g, '%$&')).substr(2);
+    }
+    return '';
+  };
+
+  const queryUserDoc = () => {
+    unsub && unsub();
+    api.query.poeModule.account2ProofHashList(userAddress, (result) => {
+      setUserDocs([]);
+      if (result && result.length) {
+        const docs = [];
+        result.forEach((digest) => api.query.poeModule.proofHash2Detail(digest.toString(), (res) => {
+          var date = new Date(parseInt(res[2]))
+          var datetime = date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
+          docs.push({
+            digest: digest.toString(),
+            blockNumber: res[1].toNumber(),
+            // createTime: new Date(parseInt(res[2])),
+            createTime: datetime,
+            note: convertToString(res[3].toString())
+          });
+          if (docs.length === result.length) {
+            setUserDocs(docs);
+            setShowingUserDocs(true);
+            setTimeout(() => setShowingUserDocs(false), 5000);
+          }
+        }));
+      } else {
+        setShowingUserDocs(true);
+        setTimeout(() => setShowingUserDocs(false), 5000);
+      }
+    }).then(unsub => setUnsub(unsub))
+      .catch(console.error);
+  };
+
+  const UserDocs = (props) => {
+    const userDocsStyle = {
+      marginTop: 10,
+      border: '1px solid green',
+      backgroundColor: 'lightgreen',
+      color: 'darkgreen',
+      borderRadius: 5,
+      padding: 10
+    };
+    const { docs } = props;
+    if (docs && docs.length) {
+      return (
+        <div style={ userDocsStyle }>
+          <ol>
+            {docs.map((doc, index) => <li key={index}>{doc.digest} =&gt; ({doc.createTime}, {doc.note}, {doc.blockNumber})</li>)}
+          </ol>
+        </div>
+      );
+    } else {
+      return (
+        <div style={ userDocsStyle }>No docs found...</div>
+      );
+    }
+  };
+
+  const onUserAddressChange = (_, data) => {
+    setUserAddress(data.value);
   };
 
   return (
@@ -218,6 +288,30 @@ function Main (props) {
         <div>{`Claim info, owner: ${owner}, blockNumber: ${blockNumber}`}</div>
 
       </Form>
+
+      <Form style={{ marginTop: 20 }}>
+        <Form.Field>
+          <Input
+            fluid
+            label='User Address'
+            type='text'
+            placeholder='address'
+            state='userAddress'
+            onChange={onUserAddressChange}
+          />
+        </Form.Field>
+        <Form.Field>
+          <Button
+            color='green'
+            basic
+            disabled={!userAddress}
+            onClick={queryUserDoc}
+          >
+            Query User Doc
+          </Button>
+        </Form.Field>
+      </Form>
+      {showingUserDocs && <UserDocs docs={userDocs}/>}
     </Grid.Column>
   );
 }
