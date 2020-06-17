@@ -37,7 +37,7 @@
     yarn submitDocInfo <your-file-path> <comment>
     ```
 
-### 效果呈现
+### 作业效果呈现
 
 ![image-20200617222131742](imgs/image-20200617222131742.png)
 
@@ -75,6 +75,10 @@ cd client
 yarn install
 yarn getUserDocs <user-account>
 ```
+
+### 作业效果呈现
+
+![image-20200617234148609](imgs/image-20200617234148609.png)
 
 ## 参考
 
