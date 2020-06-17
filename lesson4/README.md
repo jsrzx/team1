@@ -37,7 +37,15 @@
     yarn submitDocInfo <your-file-path> <comment>
     ```
 
-## 附加题(5分) - 本次附加题为必答题
+### 效果呈现
+
+![image-20200617222131742](imgs/image-20200617222131742.png)
+
+
+
+## 附加题(5分) 
+
+本次附加题为必答题
 
 下列 a) 或 b) 选一个作答
 
@@ -67,3 +75,9 @@ cd client
 yarn install
 yarn getUserDocs <user-account>
 ```
+
+## 参考
+
+https://github.com/fyang1024/team4/blob/lesson-4/lesson4/substrate-node-template/pallets/poe/src/lib.rs
+
+https://github.com/raindust/team5/blob/lesson-4/lesson4/substrate-node-template/pallets/poe/src/lib.rs
