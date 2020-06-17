@@ -17,7 +17,7 @@ mod mock;
 mod tests;
 
 /// The pallet's configuration trait.
-pub trait Trait: system::Trait {
+pub trait Trait: system::Trait + timestamp::Trait {
     // Add other types and constants required to configure this pallet.
 
     /// The overarching event type.
@@ -27,6 +27,9 @@ pub trait Trait: system::Trait {
     type MaxClaimLength: Get<u32>;
 
     type Currency: Currency<Self::AccountId>;
+
+    //hw4
+    type MaxNoteLength: Get<u32>;
 }
 
 type BalanceOf<T> =
@@ -40,6 +43,9 @@ decl_storage! {
     trait Store for Module<T: Trait> as TemplateModule {
         Proofs get(fn proofs): map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber);
         ProofsPrice: map hasher(blake2_128_concat) Vec<u8> => BalanceOf<T>;
+
+        //hw4
+        ProofHash2Detail: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Moment, Option<Vec<u8>>);
     }
 }
 
@@ -68,6 +74,7 @@ decl_error! {
         PriceAlreadySet,
         ClaimPriceNotSet,
         PriceTooLow,
+        NoteTooLong,
     }
 }
 
@@ -94,6 +101,31 @@ decl_module! {
             ensure!(T::MaxClaimLength::get() >= claim.len() as u32, Error::<T>::ProofTooLong);
 
             Proofs::<T>::insert(&claim, (sender.clone(), system::Module::<T>::block_number()));
+
+            Self::deposit_event(RawEvent::ClaimCreated(sender, claim));
+
+            Ok(())
+        }
+
+        #[weight = 0]
+        pub fn create_claim_with_note(origin, claim: Vec<u8>, note: Option<Vec<u8>>) -> dispatch::DispatchResult {
+            let sender = ensure_signed(origin)?;
+
+            ensure!(!Proofs::<T>::contains_key(&claim), Error::<T>::ProofAlreadyExist);
+
+            match note.clone() {
+                None => (),
+                Some(text) => ensure!(T::MaxNoteLength::get() >= text.len() as u32, Error::<T>::NoteTooLong),
+            }
+
+            // 附加题答案
+            ensure!(T::MaxClaimLength::get() >= claim.len() as u32, Error::<T>::ProofTooLong);
+
+            ProofHash2Detail::<T>::insert(&claim,
+                (sender.clone(),
+                 system::Module::<T>::block_number(),
+                 <timestamp::Module<T>>::now(),
+                 note.clone()));
 
             Self::deposit_event(RawEvent::ClaimCreated(sender, claim));
 

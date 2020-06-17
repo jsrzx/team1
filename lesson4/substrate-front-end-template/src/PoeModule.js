@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Grid } from 'semantic-ui-react';
+import { Form, Input, Grid, TextArea, Label } from 'semantic-ui-react';
 
 import { useSubstrate } from './substrate-lib';
 import { TxButton } from './substrate-lib/components';
@@ -16,6 +16,8 @@ function Main (props) {
   const [blockNumber, setBlockNumber] = useState(0);
   const [dest, setDest] = useState('');
   const [amount, setAmount] = useState(0);
+  const [note, setNote] = useState('');
+  const [showingNotification, setShowingNotification] = useState(false);
 
   useEffect(() => {
     let unsubscribe;
@@ -56,6 +58,41 @@ function Main (props) {
     setAmount(data.value);
   };
 
+  const MAX_NOTE_LENGTH = 256;
+  const onNoteChange = (_, data) => {
+    if (data.value && data.value.length > MAX_NOTE_LENGTH) {
+      data.value = data.value.substring(0, MAX_NOTE_LENGTH);
+    }
+    setNote(data.value);
+  };
+
+  const setExtrinsicStatus = (data) => {
+    console.log(data);
+    console.log(data.indexOf('Finalized'));
+    if (data.indexOf('Finalized') !== -1) {
+      setShowingNotification(true);
+      setTimeout(() => setShowingNotification(false), 20000);
+    }
+    setStatus(data);
+  };
+
+  const SuccessNotification = (props) => {
+    const { digest, note } = props;
+    const notificationStyle = {
+      marginTop: 10,
+      border: '1px solid green',
+      backgroundColor: 'lightgreen',
+      color: 'darkgreen',
+      borderRadius: 5,
+      padding: 10
+    };
+    return (
+      <div style={notificationStyle}>
+        You have successfully claimed file with hash <strong>{digest}</strong> with note <strong>"{note}"</strong>.
+      </div>
+    );
+  };
+
   return (
     <Grid.Column width={8}>
       <h1>Proof of Existence Module</h1>
@@ -66,6 +103,16 @@ function Main (props) {
             id='file'
             lable='Your File'
             onChange={(e) => handleFileChosen(e.target.files[0])}
+          />
+        </Form.Field>
+        <Form.Field>
+          <Label>Note</Label>
+          <TextArea
+            type='text'
+            placeholder='Some note (max 256 chars)'
+            state='note'
+            maxLength={256}
+            onChange={onNoteChange}
           />
         </Form.Field>
 
@@ -93,14 +140,14 @@ function Main (props) {
           <TxButton
             accountPair={accountPair}
             label='Create Claim'
-            setStatus={setStatus}
+            setStatus={setExtrinsicStatus}
             type='SIGNED-TX'
             attrs={
               {
                 palletRpc: 'poeModule',
-                callable: 'createClaim',
-                inputParams: [digest],
-                paramFields: [true]
+                callable: 'createClaimWithNote',
+                inputParams: [digest, note],
+                paramFields: [true, true]
               }
             }
           />
@@ -166,6 +213,7 @@ function Main (props) {
           />
         </Form.Field>
 
+        {showingNotification && <SuccessNotification digest={digest} note={note}/>}
         <div>{status}</div>
         <div>{`Claim info, owner: ${owner}, blockNumber: ${blockNumber}`}</div>
 
