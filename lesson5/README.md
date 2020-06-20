@@ -63,7 +63,9 @@
 
 ### 使用kitties-ui
 
-> 切换yarn版本：
+> **准备工作**
+>
+> - 切换yarn版本：
 >
 > ```bash
 > (2020-06-20 19:54:02) [jason@RUAN:~/Study/JasonStudySubstrate/YiKuaiSubstrateCourse/team1/lesson5/substrate-kitties-ui] (lesson-5)$ yarn --version
@@ -79,7 +81,7 @@
 > 
 > (2020-06-20 19:55:14) [jason@RUAN:~/Study/JasonStudySubstrate/YiKuaiSubstrateCourse/team1/lesson5/substrate-kitties-ui] (lesson-5)$ yarn install
 > ```
-> 设置国内淘宝源
+> - 设置国内淘宝源
 >
 > ```bash
 > $ yarn config set registry https://registry.npm.taobao.org
@@ -89,3 +91,10 @@
 > 
 > $ yarn config list
 > ```
+> - 如报错如下错误，执行`npm cache clean --force`清空npm缓存后重试：
+>
+> ```bash
+> error An unexpected error occurred: "https://registry.npm.taobao.org/typescript/download/typescript-3.9.5.tgz?cache=0&sync_timestamp=1592637499175&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Ftypescript%2Fdownload%2Ftypescript-3.9.5.tgz: unexpected end of file".
+> ```
+
+![image-20200620211017262](imgs/image-20200620211017262.png)
