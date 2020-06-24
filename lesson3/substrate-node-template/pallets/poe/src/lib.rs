@@ -73,6 +73,7 @@ decl_error! {
 
 // The pallet's dispatchable functions.
 decl_module! {
+
     /// The module declaration.
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         // Initializing errors
