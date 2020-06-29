@@ -129,12 +129,14 @@ decl_module! {
 
             ensure!(<OwnedKitties<T>>::contains_key((&sender, Some(kitty_id))), Error::<T>::RequireOwner);
 
+            // FIXME：使用mutate_exists的目的如果new_price为None可以将其删掉
             <KittyPrices<T>>::mutate_exists(kitty_id, |price| *price = new_price);
 
             Self::deposit_event(RawEvent::Ask(sender, kitty_id, new_price));
         }
 
         /// Buy a kitty
+        // FIXME：添加price目的避免购买时，价格突然飙涨，导致购买方的损失
         #[weight = 0]
         pub fn buy(origin, kitty_id: T::KittyIndex, price: BalanceOf<T>) {
             let sender = ensure_signed(origin)?;
@@ -145,6 +147,7 @@ decl_module! {
 
             ensure!(price >= kitty_price, Error::<T>::PriceTooLow);
 
+            // FIXME: 使用KeepAlive可以避免把钱全部转走，出现塞户的情况
             T::Currency::transfer(&sender, &owner, kitty_price, ExistenceRequirement::KeepAlive)?;
 
             <KittyPrices<T>>::remove(kitty_id);
@@ -241,6 +244,8 @@ mod tests {
 
     use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
     use frame_system as system;
+    use pallet_balances as balances;
+    use pallet_randomness_collective_flip as randomness_collective_flip;
     use sp_core::H256;
     use sp_runtime::{
         testing::Header,
@@ -284,14 +289,42 @@ mod tests {
         type AvailableBlockRatio = AvailableBlockRatio;
         type Version = ();
         type ModuleToIndex = ();
-        type AccountData = ();
+        //type AccountData = ();
+        type AccountData = balances::AccountData<u64>;
         type OnNewAccount = ();
         type OnKilledAccount = ();
     }
-    impl Trait for Test {
-        type KittyIndex = u32;
+
+    type System = system::Module<Test>;
+    type Balances = balances::Module<Test>;
+    type RandomnessCollectiveFlip = randomness_collective_flip::Module<Test>;
+
+    parameter_types! {
+        pub const ExistentialDeposit: u64 = 1;
     }
+
+    impl pallet_balances::Trait for Test {
+        type Balance = u64;
+        type DustRemoval = ();
+        type Event = ();
+        type ExistentialDeposit = ExistentialDeposit;
+        type AccountStore = System;
+    }
+
+    impl Trait for Test {
+        type Event = ();
+        type KittyIndex = u32;
+        type Currency = Balances;
+        type Randomness = RandomnessCollectiveFlip;
+    }
+
     type OwnedKittiesTest = OwnedKitties<Test>;
+    type KittyLinkedItem = LinkedItem<<Test as Trait>::KittyIndex>;
+    type OwnedKittiesList = LinkedList<
+        OwnedKittiesTest,
+        <Test as system::Trait>::AccountId,
+        <Test as Trait>::KittyIndex,
+    >;
 
     // This function basically just builds a genesis storage key/value store according to
     // our desired mockup.
@@ -305,7 +338,7 @@ mod tests {
     #[test]
     fn owned_kitties_can_append_values() {
         new_test_ext().execute_with(|| {
-            OwnedKittiesTest::append(&0, 1);
+            OwnedKittiesList::append(&0, 1);
 
             assert_eq!(
                 OwnedKittiesTest::get(&(0, None)),
@@ -323,7 +356,7 @@ mod tests {
                 })
             );
 
-            OwnedKittiesTest::append(&0, 2);
+            OwnedKittiesList::append(&0, 2);
 
             assert_eq!(
                 OwnedKittiesTest::get(&(0, None)),
@@ -349,7 +382,7 @@ mod tests {
                 })
             );
 
-            OwnedKittiesTest::append(&0, 3);
+            OwnedKittiesList::append(&0, 3);
 
             assert_eq!(
                 OwnedKittiesTest::get(&(0, None)),
@@ -388,11 +421,11 @@ mod tests {
     #[test]
     fn owned_kitties_can_remove_values() {
         new_test_ext().execute_with(|| {
-            OwnedKittiesTest::append(&0, 1);
-            OwnedKittiesTest::append(&0, 2);
-            OwnedKittiesTest::append(&0, 3);
+            OwnedKittiesList::append(&0, 1);
+            OwnedKittiesList::append(&0, 2);
+            OwnedKittiesList::append(&0, 3);
 
-            OwnedKittiesTest::remove(&0, 2);
+            OwnedKittiesList::remove(&0, 2);
 
             assert_eq!(
                 OwnedKittiesTest::get(&(0, None)),
@@ -420,7 +453,7 @@ mod tests {
                 })
             );
 
-            OwnedKittiesTest::remove(&0, 1);
+            OwnedKittiesList::remove(&0, 1);
 
             assert_eq!(
                 OwnedKittiesTest::get(&(0, None)),
@@ -442,7 +475,7 @@ mod tests {
                 })
             );
 
-            OwnedKittiesTest::remove(&0, 3);
+            OwnedKittiesList::remove(&0, 3);
 
             assert_eq!(
                 OwnedKittiesTest::get(&(0, None)),

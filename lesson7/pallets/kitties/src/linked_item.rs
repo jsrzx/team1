@@ -9,6 +9,7 @@ pub struct LinkedItem<Value> {
     pub next: Option<Value>,
 }
 
+// FIXME: 使用PhantomData用一下，否则会提示泛型参数没有用到错误
 pub struct LinkedList<Storage, Key, Value>(sp_std::marker::PhantomData<(Storage, Key, Value)>);
 
 impl<Storage, Key, Value> LinkedList<Storage, Key, Value>
@@ -38,9 +39,47 @@ where
 
     pub fn append(key: &Key, value: Value) {
         // 作业
+        let head = Self::read_head(key);
+        let new_head = LinkedItem {
+            prev: Some(value),
+            next: head.next,
+        };
+
+        Self::write_head(key, new_head);
+
+        let prev = Self::read(key, head.prev);
+        let new_prev = LinkedItem {
+            prev: prev.prev,
+            next: Some(value),
+        };
+        Self::write(key, head.prev, new_prev);
+
+        let item = LinkedItem {
+            prev: head.prev,
+            next: None,
+        };
+        Self::write(key, Some(value), item);
     }
 
     pub fn remove(key: &Key, value: Value) {
         // 作业
+        // take = get + remove
+        if let Some(item) = Storage::take((&key, Some(value))) {
+            let prev = Self::read(key, item.prev);
+            let new_prev = LinkedItem {
+                prev: prev.prev,
+                next: item.next,
+            };
+
+            Self::write(key, item.prev, new_prev);
+
+            let next = Self::read(key, item.next);
+            let new_next = LinkedItem {
+                prev: item.prev,
+                next: next.next,
+            };
+
+            Self::write(key, item.next, new_next);
+        }
     }
 }
