@@ -319,11 +319,16 @@ Call: From<LocalCall>,
     }
 }
 
+parameter_types! {
+    pub const UnsignedPriority: u64 = 100;
+}
+
 /// Used for the module template in `./template.rs`
 impl template::Trait for Runtime {
     type AuthorityId = OcwAuthorityId;
     type Event = Event;
     type Call = Call;
+    type UnsignedPriority = UnsignedPriority;
 }
 
 construct_runtime!(

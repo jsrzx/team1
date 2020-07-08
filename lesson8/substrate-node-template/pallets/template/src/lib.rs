@@ -9,7 +9,7 @@
 /// For more guidance on Substrate FRAME, see the example pallet
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
-use frame_support::{debug, decl_module, decl_storage, decl_event, decl_error, dispatch, dispatch::DispatchResult};
+use frame_support::{debug, decl_module, decl_storage, decl_event, decl_error, dispatch, dispatch::DispatchResult, traits::Get};
 use frame_system::{
     self as system, ensure_signed,
     offchain::{
@@ -20,6 +20,13 @@ use frame_system::{
 use sp_core::crypto::KeyTypeId;
 use sp_std::prelude::*;
 use core::{convert::TryInto};
+
+use sp_runtime::{
+    transaction_validity::{
+        TransactionPriority
+    }
+};
+
 
 #[cfg(test)]
 mod mock;
@@ -73,6 +80,8 @@ pub trait Trait: system::Trait + CreateSignedTransaction<Call<Self>> {
     /// The overarching dispatch call type.
     type Call: From<Call<Self>>;
 
+    /// The type to sign and send transactions.
+    type UnsignedPriority: Get<TransactionPriority>;
 }
 
 // This pallet's storage items.
