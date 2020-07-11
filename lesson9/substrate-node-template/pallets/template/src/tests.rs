@@ -73,15 +73,15 @@ impl system::Trait for TestRuntime {
 
 type TestExtrinsic = TestXt<Call<TestRuntime>, ()>;
 
-parameter_types! {
-    pub const UnsignedPriority: u64 = 100;
-}
+//parameter_types! {
+//    pub const UnsignedPriority: u64 = 100;
+//}
 
 impl Trait for TestRuntime {
     type AuthorityId = crypto::TestAuthId;
     type Call = Call<TestRuntime>;
     type Event = TestEvent;
-    type UnsignedPriority = UnsignedPriority;
+    //type UnsignedPriority = UnsignedPriority;
 }
 
 impl<LocalCall> system::offchain::CreateSignedTransaction<LocalCall> for TestRuntime
