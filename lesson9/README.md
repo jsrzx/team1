@@ -13,6 +13,12 @@
   - https://www.cryptocompare.com/
   - 其他你自己找到的提供者也可以
 
+
+
+```bash
+$ ./target/release/node-template  --dev --ws-external --rpc-external --rpc-cors=all
+```
+
 ![image-20200712010001099](imgs/image-20200712010001099.png)
 
 ![image-20200712010042477](imgs/image-20200712010042477.png)
@@ -33,7 +39,7 @@
 $ cargo test -p pallet-template
 ```
 
-![image-20200712005423331](imgs/image-20200712005423331.png)
+![image-20200712010659359](imgs/image-20200712010659359.png)
 
 ## 资料搜集
 
