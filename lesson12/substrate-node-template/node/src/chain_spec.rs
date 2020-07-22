@@ -8,6 +8,9 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{Verify, IdentifyAccount};
 use sc_service::ChainType;
 
+// hex-literal = "0.3.0"
+//use hex_literal::hex;
+
 // Note this is the URL for the telemetry server
 //const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -98,6 +101,46 @@ pub fn local_testnet_config() -> ChainSpec {
             None,
             )
 }
+
+//pub fn jasonruan_staging_testnet_config() -> ChainSpec {
+//
+//    let initial_authorities = vec![
+//        // text bubble owner rebuild damage today steel inflict mom book absent fiscal//jasonruan//aura
+//        hex!["a63f8465e6b3d9380a2ffc4ca84256032d438d32eb4e42217a2176f255d35287"].into(),
+//        // text bubble owner rebuild damage today steel inflict mom book absent fiscal//jasonruan//grandpa
+//        hex!["ae72aa8342e70e624d2bb583616c2c15bbedf8b00f337886ee6abbad1e99d169"].into(),
+//    ];
+//
+//    ChainSpec::from_genesis(
+//        "Local Testnet",
+//        "local_testnet",
+//        ChainType::Local,
+//        || testnet_genesis(
+//            initial_authorities,
+//            get_account_id_from_seed::<sr25519::Public>("Alice"),
+//            vec![
+//            get_account_id_from_seed::<sr25519::Public>("Alice"),
+//            get_account_id_from_seed::<sr25519::Public>("Bob"),
+//            get_account_id_from_seed::<sr25519::Public>("Charlie"),
+//            get_account_id_from_seed::<sr25519::Public>("Dave"),
+//            get_account_id_from_seed::<sr25519::Public>("Eve"),
+//            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+//            get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+//            get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+//            get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+//            get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+//            get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+//            get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+//            ],
+//            true,
+//            ),
+//            vec![],
+//            None,
+//            None,
+//            None,
+//            None,
+//            )
+//}
 
 fn testnet_genesis(initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,

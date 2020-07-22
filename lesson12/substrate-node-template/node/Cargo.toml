@@ -8,6 +8,7 @@ license = 'Unlicense'
 name = 'node-template'
 repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
 version = '2.0.0-rc4'
+
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
@@ -19,6 +20,8 @@ futures = '0.3.4'
 log = '0.4.8'
 parking_lot = '0.10.0'
 structopt = '0.3.8'
+#hex-literal = "0.3.0"
+hex-literal = "0.2.1"
 
 [dependencies.node-template-runtime]
 path = '../runtime'
@@ -30,7 +33,7 @@ tag = 'v2.0.0-rc4'
 version = '0.8.0-rc4'
 
 [dependencies.sc-cli]
-features = ['wasmtime']
+#features = ['wasmtime']
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc4'
 version = '0.8.0-rc4'
@@ -51,7 +54,7 @@ tag = 'v2.0.0-rc4'
 version = '0.8.0-rc4'
 
 [dependencies.sc-executor]
-features = ['wasmtime']
+#features = ['wasmtime']
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc4'
 version = '0.8.0-rc4'
@@ -67,7 +70,7 @@ tag = 'v2.0.0-rc4'
 version = '0.8.0-rc4'
 
 [dependencies.sc-service]
-features = ['wasmtime']
+#features = ['wasmtime']
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc4'
 version = '0.8.0-rc4'
@@ -111,7 +114,14 @@ version = '2.0.0-rc4'
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc4'
 version = '2.0.0-rc4'
+
 [build-dependencies.substrate-build-script-utils]
 git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
+
+[dependencies.telemetry]
+git = 'https://github.com/paritytech/substrate.git'
+package = "sc-telemetry"
 tag = 'v2.0.0-rc4'
 version = '2.0.0-rc4'
